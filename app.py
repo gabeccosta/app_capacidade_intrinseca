@@ -456,7 +456,7 @@ with tab1:
         st.caption("Solicite o nome de diferentes animais dentro de 1 minuto")
         c21, c22, c23, c24 = st.columns(4)
         with c21:
-            q14 = st.slider("Quantidade de animais lembrados", 0,10,5)
+            q14 = st.number_input("Quantidade de animais lembrados", min_value=0, value=0)
         
         st.markdown("---")
         st.subheader("Velocidade da Marcha")
