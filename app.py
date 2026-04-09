@@ -384,7 +384,7 @@ with tab1:
         with c55:
             rendadom = st.number_input(" Renda familiar mensal", min_value=0, value=0)
         with c65:
-            rendadompc = st.number_input("Renda familiar mensal per capita", min_value=0, value=0)
+            rendadompc = st.number_input("Renda familiar mensal per capita", min_value=0.0, value=0.0)
 
         st.markdown("---")
         
@@ -602,11 +602,11 @@ with tab1:
         st.subheader("Força de Preensão Manual")
         c46, c47, c48 = st.columns(3)
         with c46:
-            mf27 = st.number_input("Primeira Medida", min_value=0, step=1, value=0)
+            mf27 = st.number_input("Primeira Medida", min_value=0, value=0)
         with c47:
-            mf28 = st.number_input("Segunda Medida", min_value=0, step=1, value=0)
+            mf28 = st.number_input("Segunda Medida", min_value=0, value=0)
         with c48:
-            mf29 = st.number_input("Terceira Medida", min_value=0, step=1, value=0)
+            mf29 = st.number_input("Terceira Medida", min_value=0, value=0)
 
         st.markdown("---")
         st.subheader("Perda de Peso Involuntária")
@@ -644,7 +644,7 @@ with tab1:
         with c58:
             mf22 = st.number_input("Média do peso (em kg)", min_value=0.0, value=0.0)
         with c59:
-            mf13 = st.number_input("Média da altura (em cm)", min_value=0, step=1, value=0)
+            mf13 = st.number_input("Média da altura (em m)", min_value=0.0, value=0.0)
 
         submitted = st.form_submit_button("Salvar paciente")
 
