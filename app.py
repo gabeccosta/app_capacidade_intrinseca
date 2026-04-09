@@ -3,70 +3,59 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
+from sqlalchemy import text
 from mapas_variaveis import *
 
 from etl_orchestrator import run_all_etl
 
 DB_PATH = r"C:\Users\55219\Projetos\TCC\backend\banco.db"
 
-
-
 # -------------------------
 # Helpers DB
 # -------------------------
 def get_con():
-    con = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
-    con.execute("PRAGMA busy_timeout = 30000;")
-    return con
+    return st.connection("postgresql", type="sql")
 
-def init_db():
-    con = sqlite3.connect(DB_PATH)
-    try:
-        con.execute("PRAGMA journal_mode=WAL;")
-        con.commit()
-    finally:
-        con.close()
-
-init_db()
 
 def insert_individuo(data: dict) -> int:
+    conn = get_con()
+
     cols = list(data.keys())
-    placeholders = ",".join(["?"] * len(cols))
-    colnames = ",".join(cols)
+    colnames = ", ".join(cols)
+    placeholders = ", ".join([f":{c}" for c in cols])
 
-    sql = f"INSERT INTO tbl_dados_individuo ({colnames}) VALUES ({placeholders})"
+    sql = f"""
+        INSERT INTO tbl_dados_individuo ({colnames})
+        VALUES ({placeholders})
+        RETURNING id
+    """
 
-    with sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False) as con:
-        con.execute("PRAGMA busy_timeout = 30000;")
-        cur = con.cursor()
-        cur.execute(sql, [data[c] for c in cols])
-        con.commit()
-        return int(cur.lastrowid)
+    with conn.session as session:
+        result = session.execute(text(sql), data)
+        new_id = result.scalar()
+        session.commit()
+        return int(new_id)
+
 
 def load_view():
-    con = get_con()
-    try:
-        return pd.read_sql_query("SELECT * FROM vw_individuo_api", con)
-    finally:
-        con.close()
+    conn = get_con()
+    return conn.query("SELECT * FROM vw_individuo_api", ttl=0)
 
 
 def load_base_comparacao():
-    con = get_con()
-    try:
-        df = pd.read_sql_query("SELECT * FROM tbl_base_comparacao", con)
+    conn = get_con()
 
-        df = df.rename(columns={
-            "dom_cognitivo": "dom_cognitivo_norm",
-            "dom_psicologico": "dom_psicologico_norm",
-            "dom_sensorial": "dom_sensorial_norm",
-            "dom_locomotor": "dom_locomotor_norm",
-            "dom_vitalidade": "dom_vitalidade_norm"
-        })
+    df = conn.query("SELECT * FROM tbl_base_comparacao", ttl=0)
 
-        return df
-    finally:
-        con.close()
+    df = df.rename(columns={
+        "dom_cognitivo": "dom_cognitivo_norm",
+        "dom_psicologico": "dom_psicologico_norm",
+        "dom_sensorial": "dom_sensorial_norm",
+        "dom_locomotor": "dom_locomotor_norm",
+        "dom_vitalidade": "dom_vitalidade_norm"
+    })
+
+    return df
 
 # -------------------------
 # Radar
