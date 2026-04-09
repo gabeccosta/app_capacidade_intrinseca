@@ -642,7 +642,7 @@ with tab1:
         st.subheader("Índice de Massa Corpórea – IMC")
         c58, c59 = st.columns(2)
         with c58:
-            mf22 = st.number_input("Média do peso (em kg)", min_value=0, step=1, value=0)
+            mf22 = st.number_input("Média do peso (em kg)", min_value=0, step=1, value=0.0)
         with c59:
             mf13 = st.number_input("Média da altura (em cm)", min_value=0, step=1, value=0)
 
