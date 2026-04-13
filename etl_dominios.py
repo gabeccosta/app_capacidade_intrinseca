@@ -8,7 +8,7 @@ import numpy as np
 
 
 def run_etl_dominios(
-    db_path: str,
+    conn,
     tabela_origem: str = "tbl_indicadores_individuo",
     tabela_destino: str = "tbl_dominios_individuo",
     normalizar_continuas: bool = False,
