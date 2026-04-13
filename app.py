@@ -14,7 +14,7 @@ DB_PATH = r"C:\Users\55219\Projetos\TCC\backend\banco.db"
 # Helpers DB
 # -------------------------
 def get_con():
-    return st.connection("postgresql", type="sql")
+     return st.connection("neon", type="sql")
 
 
 def insert_individuo(data: dict) -> int:
