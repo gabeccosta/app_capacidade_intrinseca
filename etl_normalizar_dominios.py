@@ -12,7 +12,7 @@ COLS_DOMINIOS = [
 ]
 
 def run_etl_normalizar_dominios(
-    db_path: str,
+    conn,
     tabela_origem: str = "tbl_dominios_individuo",
     tabela_destino: str = "tbl_dominios_individuo_norm_v2",
 ) -> int:
