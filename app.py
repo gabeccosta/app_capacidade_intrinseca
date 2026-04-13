@@ -15,7 +15,7 @@ DB_PATH = r"C:\Users\55219\Projetos\TCC\backend\banco.db"
 # -------------------------
 def get_con():
      return st.connection("neon", type="sql")
-
+conn = get_con()
 
 def insert_individuo(data: dict) -> int:
     conn = get_con()
@@ -687,7 +687,7 @@ with tab1:
                 new_id = insert_individuo(data)
                 st.success(f"Paciente salvo com ID = {new_id}")
 
-                resumo = run_all_etl(DB_PATH)
+                resumo = run_all_etl(conn)
                 st.success(f"ETL OK: {resumo}")
 
             except Exception as e:
@@ -696,7 +696,7 @@ with tab1:
     if st.button("Processar ETL", use_container_width=True):
             try:
                 with st.spinner("Processando ETL..."):
-                    resumo = run_all_etl(DB_PATH)
+                    resumo = run_all_etl(conn)
                 st.success(f"ETL executado com sucesso: {resumo}")
                 st.rerun()
             except Exception as e:
