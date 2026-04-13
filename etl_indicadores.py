@@ -8,7 +8,7 @@ import numpy as np
 
 
 def run_etl(
-    db_path: str,
+    conn,
     tabela_origem: str = "tbl_dados_individuo",
     tabela_destino: str = "tbl_indicadores_individuo",
 ) -> int:
