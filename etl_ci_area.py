@@ -8,7 +8,7 @@ import numpy as np
 
 
 def run_etl_ci_area(
-    db_path: str,
+    conn,
     tabela_origem: str = "tbl_dominios_individuo_norm_v2",   # <- AGORA É A NORMALIZADA
     tabela_destino: str = "tbl_ci_area_individuo",
     cols_dominios: list[str] | None = None,
