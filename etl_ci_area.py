@@ -2,7 +2,7 @@
 import warnings
 warnings.filterwarnings('ignore')
 
-import sqlite3
+
 import pandas as pd
 import numpy as np
 
@@ -57,65 +57,49 @@ def run_etl_ci_area(
 
         return float(area)
 
-    # =========================
+        # =========================
     # (1) LER ORIGEM (NORMALIZADA)
     # =========================
-    con = sqlite3.connect(db_path)
-    try:
-        df = pd.read_sql_query(
-            f"SELECT id, {','.join(cols_dominios)} FROM {tabela_origem}",
-            con
+    df = conn.query(
+        f"SELECT id, {','.join(cols_dominios)} FROM public.{tabela_origem}",
+        ttl=0
+    )
+
+    # origem vazia => não quebra o app
+    if df.empty:
+        return 0
+
+    # Garantir colunas (por segurança)
+    for c in cols_dominios:
+        if c not in df.columns:
+            df[c] = np.nan
+
+    # =========================
+    # (2) CALCULAR ÁREA
+    # =========================
+    df["ci_area_pentagono"] = df.apply(
+        lambda row: calcular_area_pentagono([row[c] for c in cols_dominios]),
+        axis=1
+    )
+
+    # =========================
+    # (3) DF FINAL
+    # =========================
+    df_out = df[["id", "ci_area_pentagono"]].copy()
+
+    # =========================
+    # (4) GRAVAR DESTINO NO POSTGRES / NEON
+    # =========================
+    with conn.session as session:
+        df_out.to_sql(
+            tabela_destino,
+            con=session.bind,
+            schema="public",
+            if_exists="replace",
+            index=False,
+            method="multi",
+            chunksize=1000,
         )
+        session.commit()
 
-        # origem vazia => não quebra o app
-        if df.empty:
-            return 0
-
-        # Garantir colunas (por segurança)
-        for c in cols_dominios:
-            if c not in df.columns:
-                df[c] = np.nan
-
-        # =========================
-        # (2) CALCULAR ÁREA
-        # =========================
-        df["ci_area_pentagono"] = df.apply(
-            lambda row: calcular_area_pentagono([row[c] for c in cols_dominios]),
-            axis=1
-        )
-
-        # =========================
-        # (3) DF FINAL
-        # =========================
-        df_out = df[["id", "ci_area_pentagono"]].copy()
-
-        # =========================
-        # (4) CRIAR TABELA + UPSERT
-        # =========================
-        con.execute(f"""
-        CREATE TABLE IF NOT EXISTS {tabela_destino} (
-            id INTEGER PRIMARY KEY,
-            ci_area_pentagono REAL
-        )
-        """)
-
-        cols = list(df_out.columns)
-        placeholders = ",".join(["?"] * len(cols))
-        colnames = ",".join(cols)
-        update_set = ",".join([f"{c}=excluded.{c}" for c in cols if c != "id"])
-
-        sql_upsert = f"""
-        INSERT INTO {tabela_destino} ({colnames})
-        VALUES ({placeholders})
-        ON CONFLICT(id) DO UPDATE SET
-        {update_set}
-        """
-
-        rows = df_out.where(pd.notna(df_out), None).values.tolist()
-        con.executemany(sql_upsert, rows)
-        con.commit()
-
-        return len(df_out)
-
-    finally:
-        con.close()
+    return len(df_out)
