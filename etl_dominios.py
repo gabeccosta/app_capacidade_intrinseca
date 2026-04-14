@@ -69,10 +69,6 @@ def run_etl_dominios(
     # =========================
     df = conn.query(f"SELECT * FROM public.{tabela_origem}", ttl=0)
 
-        # Se não tiver nada, retorna 0 sem quebrar o app
-        if df.empty:
-            return 0
-
         # =========================
         # (2) NORMALIZAÇÃO OPCIONAL
         # =========================
