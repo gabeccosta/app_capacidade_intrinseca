@@ -636,70 +636,70 @@ with tab1:
         submitted = st.form_submit_button("Salvar paciente")
 
     if submitted:
-        # Monta dict com TODOS os campos da tabela (exceto id)
-        data = dict(
-            regiao=int(regiao),
-            zona=int(zona),
-            sexo=int(sexo),
-            idade=int(idade),
+    # Monta dict com TODOS os campos da tabela (exceto id)
+    data = dict(
+        regiao=int(regiao),
+        zona=int(zona),
+        sexo=int(sexo),
+        idade=int(idade),
 
-            e2=int(e2),
-            e7=int(e7),
-            e9=int(e9),
-            e22=int(e22),
+        e2=int(e2),
+        e7=int(e7),
+        e9=int(e9),
+        e22=int(e22),
 
-            rendadom=int(rendadom),
-            rendadompc=float(rendadompc),
+        rendadom=int(rendadom),
+        rendadompc=float(rendadompc),
 
-            b4=int(b4),
-            b6=int(b6),
-            b8=int(b8),
-            b37=int(b37),
+        b4=int(b4),
+        b6=int(b6),
+        b8=int(b8),
+        b37=int(b37),
 
-            q7=int(q7), q8=int(q8), q9=int(q9), q10=int(q10),
-            q13=int(q13),
-            q18=int(q18), q19=int(q19), q20=int(q20), q21=int(q21),
-            q14=int(q14),
+        q7=int(q7), q8=int(q8), q9=int(q9), q10=int(q10),
+        q13=int(q13),
+        q18=int(q18), q19=int(q19), q20=int(q20), q21=int(q21),
+        q14=int(q14),
 
-            mf33=int(mf33), mf34=int(mf34), mf35=int(mf35),
-            mf36=int(mf36), mf37=int(mf37), mf38=int(mf38),
+        mf33=int(mf33), mf34=int(mf34), mf35=int(mf35),
+        mf36=int(mf36), mf37=int(mf37), mf38=int(mf38),
 
-            mf30=int(mf30), mf31=int(mf31), mf32=int(mf32),
+        mf30=int(mf30), mf31=int(mf31), mf32=int(mf32),
 
-            r2=int(r2), r3=int(r3), r4=int(r4), r5=int(r5),
-            r6=int(r6), r7=int(r7), r8=int(r8), r9=int(r9),
+        r2=int(r2), r3=int(r3), r4=int(r4), r5=int(r5),
+        r6=int(r6), r7=int(r7), r8=int(r8), r9=int(r9),
 
-            n74=int(n74), n75=int(n75),
-            n6=int(n6), n7=int(n7), n16=int(n16),
+        n74=int(n74), n75=int(n75),
+        n6=int(n6), n7=int(n7), n16=int(n16),
 
-            mf27=int(mf27), mf28=int(mf28), mf29=int(mf29),
+        mf27=int(mf27), mf28=int(mf28), mf29=int(mf29),
 
-            n69=int(n69), n72=int(n72), n73=int(n73),
+        n69=int(n69), n72=int(n72), n73=int(n73),
 
-            mf22=float(mf22),
-            mf13=float(mf13),
-        )
+        mf22=float(mf22),
+        mf13=float(mf13),
+    )
 
-   if submitted:
-       try:
-           new_id = insert_individuo(data)
-           st.success(f"Paciente salvo com ID = {new_id}")
+    try:
+        new_id = insert_individuo(data)
+        st.success(f"Paciente salvo com ID = {new_id}")
 
-           resumo = run_all_etl(get_con())
-           st.success(f"ETL OK: {resumo}")
+        resumo = run_all_etl(get_con())
+        st.success(f"ETL OK: {resumo}")
 
-       except Exception as e:
-           st.error("Erro ao salvar ou processar ETL.")
-           st.code(str(e))
-    if st.button("Processar ETL", use_container_width=True):
-       try:
-           with st.spinner("Processando ETL..."):
-               resumo = run_all_etl(get_con())
-           st.success(f"ETL executado com sucesso: {resumo}")
-           st.rerun()
-       except Exception as e:
-           st.error("Erro ao executar o ETL.")
-           st.code(str(e))
+    except Exception as e:
+        st.error("Erro ao salvar ou processar ETL.")
+        st.code(str(e))
+
+if st.button("Processar ETL", use_container_width=True):
+    try:
+        with st.spinner("Processando ETL..."):
+            resumo = run_all_etl(get_con())
+        st.success(f"ETL executado com sucesso: {resumo}")
+        st.rerun()
+    except Exception as e:
+        st.error("Erro ao executar o ETL.")
+        st.code(str(e))
 # =========================================================
 # TAB 2 — COMPARAÇÃO
 # =========================================================
