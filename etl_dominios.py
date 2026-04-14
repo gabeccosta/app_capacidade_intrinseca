@@ -68,126 +68,118 @@ def run_etl_dominios(
     # =========================
     # (1) LER ORIGEM
     # =========================
-    con = sqlite3.connect(db_path, timeout=30)
-    try:
-        con.execute("PRAGMA journal_mode=WAL;")
-        con.execute("PRAGMA busy_timeout = 30000;")
-        df = pd.read_sql_query(f"SELECT * FROM {tabela_origem}", con)
+    df = conn.query(f"SELECT * FROM public.{tabela_origem}", ttl=0)
 
-        # Se não tiver nada, retorna 0 sem quebrar o app
-        if df.empty:
-            return 0
+    # =========================
+    # (2) NORMALIZAÇÃO OPCIONAL
+    # =========================
+    if normalizar_continuas:
+        for c in cols_continuas:
+            if c in df.columns:
+                df[c] = zscore_serie(df[c].astype(float))
 
-        # =========================
-        # (2) NORMALIZAÇÃO OPCIONAL
-        # =========================
-        if normalizar_continuas:
-            for c in cols_continuas:
-                if c in df.columns:
-                    df[c] = zscore_serie(df[c].astype(float))
+    # =========================
+    # (3) APLICAR PESOS
+    # =========================
+    for dominio, variaveis in pesos_cfa.items():
+        for variavel, peso in variaveis.items():
+            if variavel in df.columns:
+                df[f"{variavel}_ponderada"] = df[variavel] * peso
+            else:
+                df[f"{variavel}_ponderada"] = np.nan
 
-        # =========================
-        # (3) APLICAR PESOS
-        # =========================
-        for dominio, variaveis in pesos_cfa.items():
-            for variavel, peso in variaveis.items():
-                if variavel in df.columns:
-                    df[f"{variavel}_ponderada"] = df[variavel] * peso
-                else:
-                    df[f"{variavel}_ponderada"] = np.nan
+    # =========================
+    # (4) CALCULAR DOMÍNIOS
+    # =========================
+    df["dom_cognitivo"] = df[
+        [
+            "verbal_fluency_category_ponderada",
+            "memory_recall_ponderada",
+            "semantic_memory_ponderada",
+            "temporal_orientation_ponderada",
+        ]
+    ].mean(axis=1)
 
-        # =========================
-        # (4) CALCULAR DOMÍNIOS
-        # =========================
-        df["dom_cognitivo"] = df[
-            [
-                "verbal_fluency_category_ponderada",
-                "memory_recall_ponderada",
-                "semantic_memory_ponderada",
-                "temporal_orientation_ponderada",
-            ]
-        ].mean(axis=1)
+    df["dom_psicologico"] = df[
+        [
+            "depression_invertida_ponderada",
+            "sleep_quality_invertida_ponderada",
+        ]
+    ].mean(axis=1)
 
-        df["dom_psicologico"] = df[
-            [
-                "depression_invertida_ponderada",
-                "sleep_quality_invertida_ponderada",
-            ]
-        ].mean(axis=1)
+    df["dom_sensorial"] = df[
+        [
+            "hearing_deficit_invertida_ponderada",
+            "distance_vision_invertida_ponderada",
+            "near_vision_invertida_ponderada",
+        ]
+    ].mean(axis=1)
 
-        df["dom_sensorial"] = df[
-            [
-                "hearing_deficit_invertida_ponderada",
-                "distance_vision_invertida_ponderada",
-                "near_vision_invertida_ponderada",
-            ]
-        ].mean(axis=1)
+    df["dom_locomotor"] = df[
+        [
+            "gait_speed_ponderada",
+            "balance_test_ponderada",
+        ]
+    ].mean(axis=1)
 
-        df["dom_locomotor"] = df[
-            [
-                "gait_speed_ponderada",
-                "balance_test_ponderada",
-            ]
-        ].mean(axis=1)
+    df["dom_vitalidade"] = df[
+        [
+            "grip_strength_category_ponderada",
+            "weight_loss_invertida_ponderada",
+            "self_report_exhaustion_invertida_ponderada",
+            "poor_endurance_invertida_ponderada",
+        ]
+    ].mean(axis=1)
 
-        df["dom_vitalidade"] = df[
-            [
-                "grip_strength_category_ponderada",
-                "weight_loss_invertida_ponderada",
-                "self_report_exhaustion_invertida_ponderada",
-                "poor_endurance_invertida_ponderada",
-            ]
-        ].mean(axis=1)
+    df["ci_geral"] = df[
+        ["dom_cognitivo", "dom_psicologico", "dom_sensorial", "dom_locomotor", "dom_vitalidade"]
+    ].mean(axis=1)
 
-        df["ci_geral"] = df[
-            ["dom_cognitivo", "dom_psicologico", "dom_sensorial", "dom_locomotor", "dom_vitalidade"]
-        ].mean(axis=1)
+    # =========================
+    # (5) DF FINAL
+    # =========================
+    df_out = df[[
+        "id",
+        "dom_cognitivo",
+        "dom_psicologico",
+        "dom_sensorial",
+        "dom_locomotor",
+        "dom_vitalidade",
+        "ci_geral",
+    ]].copy()
 
-        # =========================
-        # (5) DF FINAL
-        # =========================
-        df_out = df[[
-            "id",
-            "dom_cognitivo",
-            "dom_psicologico",
-            "dom_sensorial",
-            "dom_locomotor",
-            "dom_vitalidade",
-            "ci_geral",
-        ]].copy()
+    # =========================
+    # (6) CRIAR DESTINO + UPSERT
+    # =========================
+    con.execute(f"""
+    CREATE TABLE IF NOT EXISTS {tabela_destino} (
+        id INTEGER PRIMARY KEY,
+        dom_cognitivo REAL,
+        dom_psicologico REAL,
+        dom_sensorial REAL,
+        dom_locomotor REAL,
+        dom_vitalidade REAL,
+        ci_geral REAL
+    )
+    """)
 
-        # =========================
-        # (6) CRIAR DESTINO + UPSERT
-        # =========================
-        con.execute(f"""
-        CREATE TABLE IF NOT EXISTS {tabela_destino} (
-            id INTEGER PRIMARY KEY,
-            dom_cognitivo REAL,
-            dom_psicologico REAL,
-            dom_sensorial REAL,
-            dom_locomotor REAL,
-            dom_vitalidade REAL,
-            ci_geral REAL
-        )
-        """)
+    cols = list(df_out.columns)
+    placeholders = ",".join(["?"] * len(cols))
+    colnames = ",".join(cols)
+    update_set = ",".join([f"{c}=excluded.{c}" for c in cols if c != "id"])
 
-        cols = list(df_out.columns)
-        placeholders = ",".join(["?"] * len(cols))
-        colnames = ",".join(cols)
-        update_set = ",".join([f"{c}=excluded.{c}" for c in cols if c != "id"])
+    sql_upsert = f"""
+    INSERT INTO {tabela_destino} ({colnames})
+    VALUES ({placeholders})
+    ON CONFLICT(id) DO UPDATE SET
+    {update_set}
+    """
 
-        sql_upsert = f"""
-        INSERT INTO {tabela_destino} ({colnames})
-        VALUES ({placeholders})
-        ON CONFLICT(id) DO UPDATE SET
-        {update_set}
-        """
+    rows = df_out.where(pd.notna(df_out), None).values.tolist()
+    con.executemany(sql_upsert, rows)
+    con.commit()
 
-        rows = df_out.where(pd.notna(df_out), None).values.tolist()
-        con.executemany(sql_upsert, rows)
-        con.commit()
+    return len(df_out)
 
-        return len(df_out)
-
-    finally:
-        con.close()
+finally:
+    con.close()
