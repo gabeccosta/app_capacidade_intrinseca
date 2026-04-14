@@ -680,26 +680,26 @@ with tab1:
             mf13=float(mf13),
         )
 
-        if submitted:
-            try:
-                new_id = insert_individuo(data)
-                st.success(f"Paciente salvo com ID = {new_id}")
+   if submitted:
+       try:
+           new_id = insert_individuo(data)
+           st.success(f"Paciente salvo com ID = {new_id}")
 
-                resumo = run_all_etl(get_con())
-                st.success(f"ETL OK: {resumo}")
+           resumo = run_all_etl(get_con())
+           st.success(f"ETL OK: {resumo}")
 
-            except Exception as e:
-                st.error("Erro ao salvar ou processar ETL.")
-                st.code(str(e))
+       except Exception as e:
+           st.error("Erro ao salvar ou processar ETL.")
+           st.code(str(e))
     if st.button("Processar ETL", use_container_width=True):
-            try:
-                with st.spinner("Processando ETL..."):
-                    resumo = run_all_etl(get_con())
-                st.success(f"ETL executado com sucesso: {resumo}")
-                st.rerun()
-            except Exception as e:
-                st.error("Erro ao executar o ETL.")
-                st.code(str(e))
+       try:
+           with st.spinner("Processando ETL..."):
+               resumo = run_all_etl(get_con())
+           st.success(f"ETL executado com sucesso: {resumo}")
+           st.rerun()
+       except Exception as e:
+           st.error("Erro ao executar o ETL.")
+           st.code(str(e))
 # =========================================================
 # TAB 2 — COMPARAÇÃO
 # =========================================================
