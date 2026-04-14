@@ -2,9 +2,10 @@
 import warnings
 warnings.filterwarnings('ignore')
 
-import sqlite3
+
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 
 
 def run_etl(
