@@ -348,56 +348,17 @@ def run_etl(
         # =========================
         # (13) GARANTIR TABELA DESTINO + UPSERT
         # =========================
-        con.execute(f"""
-        CREATE TABLE IF NOT EXISTS {tabela_destino} (
-            id INTEGER PRIMARY KEY,
-            regiao INTEGER,
-            zona INTEGER,
-            sexo INTEGER,
-            idade INTEGER,
-            nacionalidade INTEGER,
-            situacao_conjugal INTEGER,
-            cor INTEGER,
-            escolaridade INTEGER,
-            renda_mensal_familiar INTEGER,
-            renda_mensal_familiar_por_pessoa REAL,
-            riqueza INTEGER,
-            temporal_orientation INTEGER,
-            memory_recall INTEGER,
-            semantic_memory INTEGER,
-            verbal_fluency_category INTEGER,
-            depression_invertida INTEGER,
-            sleep_quality_invertida INTEGER,
-            hearing_deficit_invertida INTEGER,
-            distance_vision_invertida INTEGER,
-            near_vision_invertida INTEGER,
-            gait_speed REAL,
-            balance_test INTEGER,
-            grip_strength_category INTEGER,
-            weight_loss_invertida INTEGER,
-            self_report_exhaustion_invertida INTEGER,
-            poor_endurance_invertida INTEGER,
-            imc REAL
+       with conn.session as session:
+        df_out.to_sql(
+            tabela_destino,
+            con=session.bind,
+            schema="public",
+            if_exists="replace",
+            index=False,
+            method="multi",
+            chunksize=1000,
         )
-        """)
+        session.commit()
 
-        cols = list(df_out.columns)
-        placeholders = ",".join(["?"] * len(cols))
-        colnames = ",".join(cols)
-        update_set = ",".join([f"{c}=excluded.{c}" for c in cols if c != "id"])
+    return len(df_out)
 
-        sql_upsert = f"""
-        INSERT INTO {tabela_destino} ({colnames})
-        VALUES ({placeholders})
-        ON CONFLICT(id) DO UPDATE SET
-        {update_set}
-        """
-
-        rows = df_out.where(pd.notna(df_out), None).values.tolist()
-        con.executemany(sql_upsert, rows)
-        con.commit()
-
-        return len(df_out)
-
-    finally:
-        con.close()
