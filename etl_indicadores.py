@@ -2,10 +2,9 @@
 import warnings
 warnings.filterwarnings('ignore')
 
-
+import sqlite3
 import pandas as pd
 import numpy as np
-from sqlalchemy import text
 
 
 def run_etl(
@@ -139,8 +138,12 @@ def run_etl(
     # =========================
     # (1) LER ORIGEM DO SQLITE
     # =========================
-    df = conn.query(f"SELECT * FROM public.{tabela_origem}", ttl=0)
-    
+    con = sqlite3.connect(db_path, timeout=30)
+    try:
+        con.execute("PRAGMA journal_mode=WAL;")
+        con.execute("PRAGMA busy_timeout = 30000;")
+        df = pd.read_sql_query(f"SELECT * FROM {tabela_origem}", con)
+
         # =========================
         # (2) RENOMEAR COLUNAS
         # =========================
@@ -401,5 +404,3 @@ def run_etl(
 
     finally:
         con.close()
-
-
