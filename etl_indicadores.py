@@ -139,12 +139,8 @@ def run_etl(
     # =========================
     # (1) LER ORIGEM DO SQLITE
     # =========================
-    con = sqlite3.connect(db_path, timeout=30)
-    try:
-        con.execute("PRAGMA journal_mode=WAL;")
-        con.execute("PRAGMA busy_timeout = 30000;")
-        df = pd.read_sql_query(f"SELECT * FROM {tabela_origem}", con)
-
+    df = conn.query(f"SELECT * FROM public.{tabela_origem}", ttl=0)
+    
         # =========================
         # (2) RENOMEAR COLUNAS
         # =========================
