@@ -346,19 +346,21 @@ def run_etl(
     ]].copy()
 
     # =========================
-    # (13) GARANTIR TABELA DESTINO + UPSERT
+    # (13) GRAVAR TABELA DESTINO NO POSTGRES / NEON
     # =========================
-   with conn.session as session:
-    df_out.to_sql(
-        tabela_destino,
-        con=session.bind,
-        schema="public",
-        if_exists="replace",
-        index=False,
-        method="multi",
-        chunksize=1000,
-    )
-    session.commit()
+    with conn.session as session:
+        df_out.to_sql(
+            tabela_destino,
+            con=session.bind,
+            schema="public",
+            if_exists="replace",
+            index=False,
+            method="multi",
+            chunksize=1000,
+        )
+        session.commit()
 
-return len(df_out)
+    return len(df_out)
+
+
 
