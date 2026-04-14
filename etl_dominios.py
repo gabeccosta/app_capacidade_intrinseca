@@ -2,10 +2,10 @@
 import warnings
 warnings.filterwarnings('ignore')
 
-
+import sqlite3
 import pandas as pd
 import numpy as np
-from sqlalchemy import text
+
 
 def run_etl_dominios(
     conn,
@@ -67,7 +67,15 @@ def run_etl_dominios(
     # =========================
     # (1) LER ORIGEM
     # =========================
-    df = conn.query(f"SELECT * FROM public.{tabela_origem}", ttl=0)
+    con = sqlite3.connect(db_path, timeout=30)
+    try:
+        con.execute("PRAGMA journal_mode=WAL;")
+        con.execute("PRAGMA busy_timeout = 30000;")
+        df = pd.read_sql_query(f"SELECT * FROM {tabela_origem}", con)
+
+        # Se não tiver nada, retorna 0 sem quebrar o app
+        if df.empty:
+            return 0
 
         # =========================
         # (2) NORMALIZAÇÃO OPCIONAL
