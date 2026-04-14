@@ -1,4 +1,3 @@
-import sqlite3
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -8,14 +7,13 @@ from mapas_variaveis import *
 
 from etl_orchestrator import run_all_etl
 
-DB_PATH = r"C:\Users\55219\Projetos\TCC\backend\banco.db"
 
 # -------------------------
 # Helpers DB
 # -------------------------
 def get_con():
      return st.connection("neon", type="sql")
-conn = get_con()
+
 
 def insert_individuo(data: dict) -> int:
     conn = get_con()
